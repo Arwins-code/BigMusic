@@ -38,29 +38,24 @@ class MusicListFragment : Fragment() {
         _binding = FragmentMusicListBinding.inflate(inflater, container, false)
         viewModel = ViewModelProvider(this)[MusicViewModel::class.java]
 
-        musicAdapter = MusicAdapter { track ->
-            playAudio(track.previewUrl, track.trackTimeMillis)
-            viewModel.isPlaying.postValue(true)
-            binding.playerControls.root.visibility = View.VISIBLE
-        }
+        musicAdapter = MusicAdapter(
+            onClick = { track ->
+                playAudio(track.previewUrl, track.trackTimeMillis)
+                binding.playerControls.root.visibility = View.VISIBLE
+            },
+            onTrackSelected = { index ->
+                viewModel.currentPlayingIndex.postValue(index)
+            }
+        )
 
         binding.musicRecyclerView.layoutManager = LinearLayoutManager(requireContext())
         binding.musicRecyclerView.adapter = musicAdapter
+        viewModel.searchMusic("edsheeran")
+        setupEditText()
 
-        binding.searchEditText.addTextChangedListener(object : TextWatcher{
-            override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
-
-            override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
-                val query = p0.toString()
-                if (query.isNotEmpty()) {
-                    viewModel.searchMusic(query)
-                } else {
-                    musicAdapter.updateData(emptyList())
-                }
-            }
-
-            override fun afterTextChanged(p0: Editable?) {}
-        })
+        viewModel.currentPlayingIndex.observe(viewLifecycleOwner) { index ->
+            musicAdapter.updatePlayingIndex(index)
+        }
 
         viewModel.musicTracks.observe(viewLifecycleOwner) { tracks ->
             musicTracks = tracks
@@ -71,15 +66,14 @@ class MusicListFragment : Fragment() {
             currentTrackIndex = index
         }
 
-        viewModel.isPlaying.observe(viewLifecycleOwner) { isPlaying ->
-            musicTracks[currentTrackIndex].isPlaying = isPlaying
-        }
-
         binding.playerControls.playPauseButton.setOnClickListener {
             if (mediaPlayer?.isPlaying == true) {
                 pauseAudio()
             } else {
-                playAudio(url = musicTracks.getOrNull(currentTrackIndex)?.previewUrl ?: "", time = musicTracks.getOrNull(currentTrackIndex)?.trackTimeMillis ?: 0)
+                playAudio(
+                    url = musicTracks.getOrNull(currentTrackIndex)?.previewUrl ?: "",
+                    time = musicTracks.getOrNull(currentTrackIndex)?.trackTimeMillis ?: 0
+                )
             }
         }
 
@@ -94,6 +88,28 @@ class MusicListFragment : Fragment() {
         return binding.root
     }
 
+    private fun setupEditText() {
+        binding.searchEditText.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val query = s.toString().trim()
+
+                if (query.isNotEmpty()) {
+                    viewModel.searchMusic(query)
+                    stopAudio()
+                    binding.playerControls.root.visibility = View.GONE
+                } else {
+                    viewModel.searchMusic("edsheeran")
+                    stopAudio()
+                    binding.playerControls.root.visibility = View.GONE
+                }
+            }
+
+            override fun afterTextChanged(s: Editable?) {}
+        })
+    }
+
     private fun setupSeekBar(time: Int) {
         binding.playerControls.seekBar.max = mediaPlayer?.duration ?: 0
 
@@ -103,14 +119,15 @@ class MusicListFragment : Fragment() {
             override fun run() {
                 mediaPlayer?.let {
                     binding.playerControls.seekBar.progress = it.currentPosition
-                    handler.postDelayed(this, 1000) // Update every second
+                    handler.postDelayed(this, 1000)
                 }
             }
         }
         handler.post(runnable)
 
         // SeekBar listener
-        binding.playerControls.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+        binding.playerControls.seekBar.setOnSeekBarChangeListener(object :
+            SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 if (fromUser) {
                     mediaPlayer?.seekTo(progress)
@@ -160,8 +177,12 @@ class MusicListFragment : Fragment() {
 
     private fun playNextTrack() {
         if (currentTrackIndex < musicTracks.size - 1) {
-            viewModel.currentTrackIndex.postValue(currentTrackIndex+1)
-            playAudio(url = musicTracks[currentTrackIndex].previewUrl, time = musicTracks[currentTrackIndex].trackTimeMillis)
+            currentTrackIndex++
+            viewModel.currentPlayingIndex.postValue(currentTrackIndex) // Update ViewModel
+            playAudio(
+                musicTracks[currentTrackIndex].previewUrl,
+                musicTracks[currentTrackIndex].trackTimeMillis
+            )
         } else {
             Toast.makeText(requireContext(), "No more tracks", Toast.LENGTH_SHORT).show()
         }
@@ -169,11 +190,23 @@ class MusicListFragment : Fragment() {
 
     private fun playPreviousTrack() {
         if (currentTrackIndex > 0) {
-            viewModel.currentTrackIndex.postValue(currentTrackIndex-1)
-            playAudio(url = musicTracks[currentTrackIndex].previewUrl, time = musicTracks[currentTrackIndex].trackTimeMillis)
+            currentTrackIndex--
+            viewModel.currentPlayingIndex.postValue(currentTrackIndex)
+            playAudio(
+                musicTracks[currentTrackIndex].previewUrl,
+                musicTracks[currentTrackIndex].trackTimeMillis
+            )
         } else {
             Toast.makeText(requireContext(), "No previous tracks", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private fun stopAudio() {
+        mediaPlayer?.stop()
+        mediaPlayer?.release()
+        mediaPlayer = null
+        viewModel.currentPlayingIndex.postValue(null)
+        musicAdapter.notifyDataSetChanged()
     }
 
     override fun onDestroyView() {

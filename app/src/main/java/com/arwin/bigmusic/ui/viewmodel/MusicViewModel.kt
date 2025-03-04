@@ -16,8 +16,8 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     private val repository: MusicRepository
     private val _musicTracks = MutableLiveData<List<MusicTrack>>()
     val musicTracks: LiveData<List<MusicTrack>> get() = _musicTracks
-    val isPlaying = MutableLiveData<Boolean>()
     val currentTrackIndex = MutableLiveData<Int>()
+    val currentPlayingIndex = MutableLiveData<Int?>(null)
 
     init {
         val apiService = RetrofitInstance.getRetrofitInstance().create(ApiService::class.java)
