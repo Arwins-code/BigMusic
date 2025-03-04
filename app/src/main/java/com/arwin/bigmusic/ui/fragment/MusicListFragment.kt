@@ -6,6 +6,7 @@ import android.os.Handler
 import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -30,7 +31,6 @@ class MusicListFragment : Fragment() {
     private var mediaPlayer: MediaPlayer? = null
     private var currentTrackIndex = 0
     private var musicTracks: List<MusicTrack> = emptyList()
-    private var isPlaying = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -41,7 +41,7 @@ class MusicListFragment : Fragment() {
 
         musicAdapter = MusicAdapter { track ->
             playAudio(track.previewUrl, track.trackTimeMillis)
-            isPlaying = true
+            viewModel.isPlaying.postValue(true)
             binding.playerControls.root.visibility = View.VISIBLE
         }
 
@@ -64,11 +64,16 @@ class MusicListFragment : Fragment() {
         })
 
         viewModel.musicTracks.observe(viewLifecycleOwner) { tracks ->
-            if (tracks.isNotEmpty()) {
-                tracks[currentTrackIndex].isPlaying = isPlaying
-            }
             musicTracks = tracks
             musicAdapter.updateData(tracks)
+        }
+
+        viewModel.currentTrackIndex.observe(viewLifecycleOwner) { index ->
+            currentTrackIndex = index
+        }
+
+        viewModel.isPlaying.observe(viewLifecycleOwner) { isPlaying ->
+            musicTracks[currentTrackIndex].isPlaying = isPlaying
         }
 
         binding.playerControls.playPauseButton.setOnClickListener {
@@ -156,7 +161,7 @@ class MusicListFragment : Fragment() {
 
     private fun playNextTrack() {
         if (currentTrackIndex < musicTracks.size - 1) {
-            currentTrackIndex++
+            viewModel.currentTrackIndex.postValue(currentTrackIndex+1)
             playAudio(url = musicTracks[currentTrackIndex].previewUrl, time = musicTracks[currentTrackIndex].trackTimeMillis)
         } else {
             Toast.makeText(requireContext(), "No more tracks", Toast.LENGTH_SHORT).show()
@@ -165,7 +170,7 @@ class MusicListFragment : Fragment() {
 
     private fun playPreviousTrack() {
         if (currentTrackIndex > 0) {
-            currentTrackIndex--
+            viewModel.currentTrackIndex.postValue(currentTrackIndex-1)
             playAudio(url = musicTracks[currentTrackIndex].previewUrl, time = musicTracks[currentTrackIndex].trackTimeMillis)
         } else {
             Toast.makeText(requireContext(), "No previous tracks", Toast.LENGTH_SHORT).show()

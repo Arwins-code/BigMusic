@@ -34,7 +34,7 @@ class MusicAdapter(
         holder.binding.artistName.text = track.artistName
         holder.binding.albumName.text = track.collectionName
         Log.e("Arwin", "onBindViewHolder: ${track.isPlaying}, ${track.artistName}")
-        holder.binding.animationPlay.visibility = if (track.isPlaying) View.VISIBLE else View.GONE // this lottie naimation show and play based on selected item
+        holder.binding.animationPlay.visibility = if (track.isPlaying) View.VISIBLE else View.GONE
         Glide
             .with(holder.itemView.context)
             .load(track.artworkUrl60)
