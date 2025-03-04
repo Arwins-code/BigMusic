@@ -15,7 +15,15 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/musicRecyclerView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
         android:layout_below="@id/searchEditText"
+        android:layout_above="@id/playerControls"
         android:layout_marginTop="16dp"/>
+
+    <include
+        android:id="@+id/playerControls"
+        layout="@layout/player_controls"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"/>
 </RelativeLayout>

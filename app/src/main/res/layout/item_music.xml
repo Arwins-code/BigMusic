@@ -21,7 +21,7 @@
         android:paddingStart="16dp">
 
         <TextView
-            android:id="@+id/trackName"
+            android:id="@+id/songName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="18sp"
@@ -32,8 +32,21 @@
             android:id="@+id/artistName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="14sp"
+            android:textSize="16sp"
             tools:text="Artist Name" />
+
+        <TextView
+            android:id="@+id/albumName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="13sp"
+            tools:text="Album Name" />
     </LinearLayout>
+
+    <ImageView
+        android:id="@+id/animationPlaying"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        tools:src="@drawable/ic_play"/>
 
 </LinearLayout>
