@@ -1,6 +1,8 @@
 package com.arwin.bigmusic.ui.adapter
 
+import android.util.Log
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.arwin.bigmusic.data.model.MusicTrack
@@ -31,12 +33,16 @@ class MusicAdapter(
         holder.binding.songName.text = track.trackName
         holder.binding.artistName.text = track.artistName
         holder.binding.albumName.text = track.collectionName
+        Log.e("Arwin", "onBindViewHolder: ${track.isPlaying}, ${track.artistName}")
+        holder.binding.animationPlay.visibility = if (track.isPlaying) View.VISIBLE else View.GONE // this lottie naimation show and play based on selected item
         Glide
             .with(holder.itemView.context)
             .load(track.artworkUrl60)
             .into(holder.binding.albumImage)
         holder.itemView.setOnClickListener {
             onClick(track)
+            track.isPlaying = !track.isPlaying
+            notifyItemChanged(position)
         }
     }
 

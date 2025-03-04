@@ -36,5 +36,6 @@ data class MusicTrack(
     val country: String,
     val currency: String,
     val primaryGenreName: String,
-    val isStreamable: Boolean
+    val isStreamable: Boolean,
+    var isPlaying: Boolean
 )

@@ -3,6 +3,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="horizontal"
     android:padding="16dp">
 
@@ -43,10 +44,13 @@
             tools:text="Album Name" />
     </LinearLayout>
 
-    <ImageView
-        android:id="@+id/animationPlaying"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        tools:src="@drawable/ic_play"/>
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/animationPlay"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        app:lottie_autoPlay="true"
+        app:lottie_loop="true"
+        android:visibility="invisible"
+        app:lottie_rawRes="@raw/spectrum_play"/>
 
 </LinearLayout>

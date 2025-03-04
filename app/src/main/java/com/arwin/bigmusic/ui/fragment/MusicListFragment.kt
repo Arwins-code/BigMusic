@@ -2,7 +2,10 @@ package com.arwin.bigmusic.ui.fragment
 
 import android.media.MediaPlayer
 import android.os.Bundle
-import android.view.KeyEvent
+import android.os.Handler
+import android.os.Looper
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -27,6 +30,7 @@ class MusicListFragment : Fragment() {
     private var mediaPlayer: MediaPlayer? = null
     private var currentTrackIndex = 0
     private var musicTracks: List<MusicTrack> = emptyList()
+    private var isPlaying = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -36,27 +40,33 @@ class MusicListFragment : Fragment() {
         viewModel = ViewModelProvider(this)[MusicViewModel::class.java]
 
         musicAdapter = MusicAdapter { track ->
-            playAudio(track.previewUrl)
+            playAudio(track.previewUrl, track.trackTimeMillis)
+            isPlaying = true
+            binding.playerControls.root.visibility = View.VISIBLE
         }
 
         binding.musicRecyclerView.layoutManager = LinearLayoutManager(requireContext())
         binding.musicRecyclerView.adapter = musicAdapter
 
-        binding.searchEditText.setOnKeyListener { _, keyCode, event ->
-            if (event.action == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_ENTER) {
-                val searchTerm = binding.searchEditText.text.toString()
-                if (searchTerm.isNotEmpty()) {
-                    viewModel.searchMusic(searchTerm)
+        binding.searchEditText.addTextChangedListener(object : TextWatcher{
+            override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
+
+            override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
+                val query = p0.toString()
+                if (query.isNotEmpty()) {
+                    viewModel.searchMusic(query)
                 } else {
                     musicAdapter.updateData(emptyList())
                 }
-                true
-            } else {
-                false
             }
-        }
+
+            override fun afterTextChanged(p0: Editable?) {}
+        })
 
         viewModel.musicTracks.observe(viewLifecycleOwner) { tracks ->
+            if (tracks.isNotEmpty()) {
+                tracks[currentTrackIndex].isPlaying = isPlaying
+            }
             musicTracks = tracks
             musicAdapter.updateData(tracks)
         }
@@ -65,7 +75,7 @@ class MusicListFragment : Fragment() {
             if (mediaPlayer?.isPlaying == true) {
                 pauseAudio()
             } else {
-                playAudio(musicTracks.getOrNull(currentTrackIndex)?.previewUrl ?: "")
+                playAudio(url = musicTracks.getOrNull(currentTrackIndex)?.previewUrl ?: "", time = musicTracks.getOrNull(currentTrackIndex)?.trackTimeMillis ?: 0)
             }
         }
 
@@ -77,6 +87,25 @@ class MusicListFragment : Fragment() {
             playPreviousTrack()
         }
 
+        return binding.root
+    }
+
+    private fun setupSeekBar(time: Int) {
+        binding.playerControls.seekBar.max = mediaPlayer?.duration ?: 0
+
+        // Update SeekBar in real-time
+        val handler = Handler(Looper.getMainLooper())
+        val runnable = object : Runnable {
+            override fun run() {
+                mediaPlayer?.let {
+                    binding.playerControls.seekBar.progress = it.currentPosition
+                    handler.postDelayed(this, 1000) // Update every second
+                }
+            }
+        }
+        handler.post(runnable)
+
+        // SeekBar listener
         binding.playerControls.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 if (fromUser) {
@@ -85,12 +114,17 @@ class MusicListFragment : Fragment() {
             }
 
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                if (mediaPlayer != null && mediaPlayer!!.isPlaying) {
+                    if (seekBar != null) {
+                        mediaPlayer!!.seekTo(seekBar.progress)
+                    };
+                }
+            }
         })
-        return binding.root
     }
 
-    private fun playAudio(url: String) {
+    private fun playAudio(url: String, time: Int) {
         if (url.isEmpty()) return
 
         mediaPlayer?.stop()
@@ -100,9 +134,10 @@ class MusicListFragment : Fragment() {
         try {
             mediaPlayer?.setDataSource(url)
             mediaPlayer?.prepareAsync()
+            mediaPlayer?.isLooping = false
             mediaPlayer?.setOnPreparedListener {
                 it.start()
-                binding.playerControls.seekBar.max = it.duration
+                setupSeekBar(time)
                 binding.playerControls.playPauseButton.setImageResource(R.drawable.ic_pause)
             }
             mediaPlayer?.setOnCompletionListener {
@@ -122,7 +157,7 @@ class MusicListFragment : Fragment() {
     private fun playNextTrack() {
         if (currentTrackIndex < musicTracks.size - 1) {
             currentTrackIndex++
-            playAudio(musicTracks[currentTrackIndex].previewUrl)
+            playAudio(url = musicTracks[currentTrackIndex].previewUrl, time = musicTracks[currentTrackIndex].trackTimeMillis)
         } else {
             Toast.makeText(requireContext(), "No more tracks", Toast.LENGTH_SHORT).show()
         }
@@ -131,7 +166,7 @@ class MusicListFragment : Fragment() {
     private fun playPreviousTrack() {
         if (currentTrackIndex > 0) {
             currentTrackIndex--
-            playAudio(musicTracks[currentTrackIndex].previewUrl)
+            playAudio(url = musicTracks[currentTrackIndex].previewUrl, time = musicTracks[currentTrackIndex].trackTimeMillis)
         } else {
             Toast.makeText(requireContext(), "No previous tracks", Toast.LENGTH_SHORT).show()
         }

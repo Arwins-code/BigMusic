@@ -21,6 +21,7 @@
         android:layout_marginTop="16dp"/>
 
     <include
+        android:visibility="invisible"
         android:id="@+id/playerControls"
         layout="@layout/player_controls"
         android:layout_width="match_parent"
