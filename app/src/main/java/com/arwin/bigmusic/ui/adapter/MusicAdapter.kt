@@ -1,6 +1,5 @@
 package com.arwin.bigmusic.ui.adapter
 
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -33,7 +32,6 @@ class MusicAdapter(
         holder.binding.songName.text = track.trackName
         holder.binding.artistName.text = track.artistName
         holder.binding.albumName.text = track.collectionName
-        Log.e("Arwin", "onBindViewHolder: ${track.isPlaying}, ${track.artistName}")
         holder.binding.animationPlay.visibility = if (track.isPlaying) View.VISIBLE else View.GONE
         Glide
             .with(holder.itemView.context)
