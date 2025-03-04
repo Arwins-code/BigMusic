@@ -8,16 +8,15 @@ import com.arwin.bigmusic.databinding.ItemMusicBinding
 import com.bumptech.glide.Glide
 
 class MusicAdapter(
-    private val musicTracks: List<MusicTrack>,
     private val onClick: (MusicTrack) -> Unit
 ) : RecyclerView.Adapter<MusicAdapter.MusicViewHolder>() {
-    private var music: MutableList<MusicTrack> = mutableListOf()
+    private var musicTracks: MutableList<MusicTrack> = mutableListOf()
 
     class MusicViewHolder(val binding: ItemMusicBinding) : RecyclerView.ViewHolder(binding.root)
 
     fun updateData(newData: List<MusicTrack>) {
-        music.clear()
-        music.addAll(newData)
+        musicTracks.clear()
+        musicTracks.addAll(newData)
         notifyDataSetChanged()
     }
 
@@ -29,11 +28,12 @@ class MusicAdapter(
 
     override fun onBindViewHolder(holder: MusicViewHolder, position: Int) {
         val track = musicTracks[position]
-        holder.binding.trackName.text = track.trackName
+        holder.binding.songName.text = track.trackName
         holder.binding.artistName.text = track.artistName
+        holder.binding.albumName.text = track.collectionName
         Glide
             .with(holder.itemView.context)
-            .load(track.collectionName)
+            .load(track.artworkUrl60)
             .into(holder.binding.albumImage)
         holder.itemView.setOnClickListener {
             onClick(track)
