@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.arwin.bigmusic"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.arwin.bigmusic"
